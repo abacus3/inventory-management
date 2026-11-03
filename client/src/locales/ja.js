@@ -81,6 +81,8 @@ export default {
     skus: "SKU",
     searchPlaceholder: "品目名で検索...",
     clearSearch: "検索をクリア",
+    exportCsv: "CSVエクスポート",
+    exportCsvTitle: "現在表示中の品目をCSVファイルとしてダウンロード",
     totalItems: "総品目数",
     totalValue: "総価値",
     lowStockItems: "在庫僅少品目",
