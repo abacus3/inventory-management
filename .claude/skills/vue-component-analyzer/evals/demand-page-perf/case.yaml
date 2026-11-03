@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: demand-page-perf
+expected_outcome: |
+  Focuses on Demand.vue, identifies the three getForecastsByTrend(...).slice() calls in v-for sources and the useI18n() call inside translatePeriod, recommends computed-based fixes with concrete snippets, gives an honest assessment of how much the data size matters, and edits no files.

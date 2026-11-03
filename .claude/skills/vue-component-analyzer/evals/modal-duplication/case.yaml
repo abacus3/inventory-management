@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: modal-duplication
+expected_outcome: |
+  Identifies the shared modal shell (overlay, container, header, close button, body, footer, info-item grid, secondary button) across the five modals with evidence, proposes a concrete base component with slots and props plus any shared utils, and edits no files.
