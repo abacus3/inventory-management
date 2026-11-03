@@ -27,6 +27,41 @@
         </div>
       </div>
 
+      <!-- Restock orders are independent of the global filters (no warehouse/category), so this card is never filtered -->
+      <div class="card submitted-card">
+        <div class="card-header">
+          <h3 class="card-title">{{ t('orders.submittedOrders') }} ({{ restockOrders.length }})</h3>
+        </div>
+        <div v-if="restockError" class="error">{{ restockError }}</div>
+        <div v-else-if="restockOrders.length === 0" class="empty-state">{{ t('orders.submittedOrdersEmpty') }}</div>
+        <div v-else class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>{{ t('orders.table.orderNumber') }}</th>
+                <th>{{ t('orders.submittedDate') }}</th>
+                <th>{{ t('orders.table.items') }}</th>
+                <th>{{ t('orders.table.totalValue') }}</th>
+                <th>{{ t('orders.leadTimeDays') }}</th>
+                <th>{{ t('orders.table.expectedDelivery') }}</th>
+                <th>{{ t('orders.table.status') }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="ro in restockOrders" :key="ro.id">
+                <td><strong>{{ ro.order_number }}</strong></td>
+                <td>{{ formatDate(ro.submitted_date) }}</td>
+                <td>{{ ro.items.length }}</td>
+                <td><strong>{{ formatCurrency(ro.total_cost, currentCurrency) }}</strong></td>
+                <td>{{ ro.lead_time_days }}</td>
+                <td>{{ formatDate(ro.expected_delivery) }}</td>
+                <td><span class="badge info">{{ ro.status }}</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
       <div class="card">
         <div class="card-header">
           <h3 class="card-title">{{ t('orders.allOrders') }} ({{ orders.length }})</h3>
@@ -83,6 +118,7 @@ import { ref, onMounted, watch, computed } from 'vue'
 import { api } from '../api'
 import { useFilters } from '../composables/useFilters'
 import { useI18n } from '../composables/useI18n'
+import { formatCurrency } from '../utils/currency'
 
 export default {
   name: 'Orders',
@@ -95,6 +131,8 @@ export default {
     const loading = ref(true)
     const error = ref(null)
     const orders = ref([])
+    const restockOrders = ref([])
+    const restockError = ref(null)
 
     // Use shared filters
     const {
@@ -146,20 +184,40 @@ export default {
     const formatDate = (dateString) => {
       const { currentLocale } = useI18n()
       const locale = currentLocale.value === 'ja' ? 'ja-JP' : 'en-US'
-      return new Date(dateString).toLocaleDateString(locale, {
+      const date = new Date(dateString)
+      // Invalid/missing dates render as a dash instead of "Invalid Date"
+      if (!dateString || isNaN(date.getTime())) return '-'
+      return date.toLocaleDateString(locale, {
         year: 'numeric',
         month: 'short',
         day: 'numeric'
       })
     }
 
-    onMounted(loadOrders)
+    // Loaded once on mount and deliberately NOT tied to the filter watcher:
+    // restock orders carry no warehouse/category, so global filters don't apply.
+    const loadRestockOrders = async () => {
+      try {
+        restockOrders.value = await api.getRestockOrders()
+      } catch (err) {
+        restockError.value = t('orders.submittedOrdersLoadFailed') + ': ' + err.message
+      }
+    }
+
+    onMounted(() => {
+      loadOrders()
+      loadRestockOrders()
+    })
 
     return {
       t,
       loading,
       error,
       orders,
+      restockOrders,
+      restockError,
+      currentCurrency,
+      formatCurrency,
       getOrdersByStatus,
       getOrderStatusClass,
       formatDate,
@@ -172,6 +230,16 @@ export default {
 </script>
 
 <style scoped>
+.submitted-card {
+  margin-bottom: 1.5rem;
+}
+
+.empty-state {
+  padding: 1.5rem;
+  color: #64748b;
+  text-align: center;
+}
+
 /* Fixed table layout to prevent column shifting */
 .orders-table {
   table-layout: fixed;
