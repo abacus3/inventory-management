@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: whole-app-audit
+expected_outcome: |
+  A ranked report covering the whole client/src with file:line evidence, flagging the unresolved PurchaseOrderModal, the duplicated formatDate helpers, and the copy-pasted modal shells, without editing any files.
